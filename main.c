@@ -51,12 +51,11 @@ int createHashTable(HashTable* t){
 
 //def init
 int conditions(char* str, HashTable* ht, int adrs){
-    List lst = *(ht->ht[adrs]);
-    if (lst.el==NULL){
-        lst.el = str;
-        lst.counter++;
-    }else if(!strcmp(str, lst.el)){
-        lst.counter++;
+    if (ht->ht[adrs]->el==NULL){
+        ht->ht[adrs]->el = str;
+        ht->ht[adrs]->counter++;
+    }else if(!strcmp(str, ht->ht[adrs]->el)){
+        ht->ht[adrs]->counter++;
     }else{
         conditions(str, ht, (adrs+1)%(ht->sizeHashTable));
     }
@@ -72,6 +71,10 @@ int init(char* str, HashTable* ht){
 //def del
 
 //def input
+void input(HashTable* ht, FILE* rsr){
+    char arr[256];
+    fscanf(rsr, "%s", arr);
+}
 
 //def output
 void printHashTable(HashTable* ht){
@@ -85,7 +88,7 @@ void printHashTable(HashTable* ht){
 
 //def benchmarck
 
-int main(){
+int main(int argc, char* argv[]){
     HashTable ht;
     createHashTable(&ht);
     char arr[40];
