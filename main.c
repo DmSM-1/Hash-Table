@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BASE_SIZE 64
+#define BASE_SIZE 32
+#define CRITICAL_PERSENT 0.7
 
 //struct list
 typedef struct Zlist{
     void* el;
     int counter;
-    struct Zlist* next;
+    //struct Zlist* next;
 }List;
 
 //struct ht
@@ -30,40 +31,63 @@ size_t hashfunc(char* key, size_t htsize) {
 	return h % htsize;
 }
 
+
+List** createList(int size){
+    List** ht = calloc(sizeof(List*), size);
+    for(int i = 0; i<size;i++){
+        ht[i] = malloc(sizeof(List));
+        *(ht[i]) = (List){NULL, 0};
+    }
+    return ht;
+}
+
 //def creat
 int createHashTable(HashTable* t){
     t->sizeHashTable=BASE_SIZE;
     t->notempy = 0;
-    t->ht = calloc(sizeof(List*), t->sizeHashTable);
-    
-    for(int i = 0; i<BASE_SIZE;i++){
-        t->ht[i] = malloc(sizeof(List));
-        *(t->ht[i]) = (List){NULL, 0, NULL};
-        if (i){
-            t->ht[i-1]->next=t->ht[i];
-        }
-    }
+    t->ht = createList(t->sizeHashTable);
 }
 
 //der reh
 
-//def free
 
-//def init
-int conditions(char* str, HashTable* ht, int adrs){
-    if (ht->ht[adrs]->el==NULL){
-        ht->ht[adrs]->el = str;
-        ht->ht[adrs]->counter++;
-    }else if(!strcmp(str, ht->ht[adrs]->el)){
-        ht->ht[adrs]->counter++;
-    }else{
-        conditions(str, ht, (adrs+1)%(ht->sizeHashTable));
+//def free
+void freeHT(HashTable* ht){
+    for(int i = 0; i < ht->sizeHashTable; i++){
+        free(ht->ht[i]->el);
+        free(ht->ht[i]);
+    }
+    free(ht->ht);
+}
+
+//def initEl
+int initList(char* str, List** ht, int sizeHashTable){
+    int adrs = hashfunc(str, sizeHashTable);
+    while (1){
+        if (ht[adrs]->el==NULL){
+            ht[adrs]->el = str;
+            ht[adrs]->counter++;
+            return 1;
+        }else if(!strcmp(str, ht[adrs]->el)){
+            ht[adrs]->counter++;
+            return 0;
+        }else{
+            adrs = (adrs+1)%(sizeHashTable);
+        }
     }
 }
 
-int init(char* str, HashTable* ht){
+//reh
+int rehash(HashTable* ht){
+    
+}
+
+int initEl(char* str, HashTable* ht){
     int adrs = hashfunc(str, ht->sizeHashTable);
-    conditions(str, ht, (adrs+1)%(ht->sizeHashTable));
+    ht->notempy+=initList(str, ht->ht, ht->sizeHashTable);
+    if (ht->notempy/ht->sizeHashTable>=CRITICAL_PERSENT){
+        rehash(ht);
+    }
 }
 
 //def search
@@ -72,15 +96,19 @@ int init(char* str, HashTable* ht){
 
 //def input
 void input(HashTable* ht, FILE* rsr){
-    char arr[256];
-    fscanf(rsr, "%s", arr);
+    char inputStr[256];
+    while (fgets(inputStr, 256, rsr)){
+        char* str = calloc(sizeof(char), 256);
+        strcpy(str, inputStr);
+        initEl(str, ht);
+    }
 }
 
 //def output
 void printHashTable(HashTable* ht){
     for(int i = 0; i<ht->sizeHashTable;i++){
         if (ht->ht[i]->el!=NULL){
-            printf("%2d: %s\n", i, (char*)(ht->ht[i]->el));
+            printf("%2d: %s", i, (char*)(ht->ht[i]->el));
         }else
             printf("%2d: NULL\n", i);
     }
@@ -91,8 +119,10 @@ void printHashTable(HashTable* ht){
 int main(int argc, char* argv[]){
     HashTable ht;
     createHashTable(&ht);
-    char arr[40];
-    scanf("%s",arr);
-    init(arr, &ht);
+    FILE* file = fopen("text.txt", "r");
+    input(&ht, file);
     printHashTable(&ht);
+    printf("%d\n", ht.notempy);
+    freeHT(&ht);
+    fclose(file);
 }
